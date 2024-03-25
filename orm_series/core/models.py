@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 class Restaurant(models.Model):
 
     class TypeChoices(models.TextChoices):
+        ITALIAN = "IT", "Italian"
         INDIAN = "IN", "Indian"
         CHINESE = "CH", "Chinese"
         GREEK = "GR", "Greek"
@@ -27,14 +28,19 @@ class Restaurant(models.Model):
 
 class Rating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name="ratings"
+    )
     rating = models.PositiveSmallIntegerField()
 
     def __str__(self) -> str:
-        return f"Rating: f{self.rating}"
+        return f"Rating: {self.rating}"
 
 
 class Sale(models.Model):
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, related_name="sales")
     income = models.DecimalField(max_digits=8, decimal_places=2)
     datetime = models.DateTimeField()
+
+    def __str__(self) -> str:
+        return f"$ {self.income}"
