@@ -10,17 +10,36 @@ from core.models import Restaurant, Rating, Sale
 
 
 def run():
-    try:
-        user = User.objects.first()
-        restaurant = Restaurant.objects.first()
 
-        rating = Rating(user=user, restaurant=restaurant, rating=10)
+   
+    sales = Sale.objects.first()
+    print(sales.restaurant_id)
 
-        rating.full_clean()
-        rating.save()
+    # restaurants = Restaurant.objects.filter(name__istartswith="i")
+    # print(restaurants)
 
-    except Exception as e:
-        print(e)
+    # restaurants.update(
+    #     date_opened =  timezone.now() - timezone.timedelta(days=365),
+    #     website = "http://www.test.com"
+    # )
+
+    # restaurant = Restaurant.objects.first()
+    # print(restaurant.name)
+
+    # restaurant.name = "Italian Food Court"
+    # restaurant.save(update_fields=["name"])
+
+    # try:
+    #     user = User.objects.first()
+    #     restaurant = Restaurant.objects.first()
+
+    #     rating = Rating(user=user, restaurant=restaurant, rating=10)
+
+    #     rating.full_clean()
+    #     rating.save()
+
+    # except Exception as e:
+    # print(e)
 
     # rating, created = Rating.objects.get_or_create(
     #     restaurant=restaurant, user=user, rating=4

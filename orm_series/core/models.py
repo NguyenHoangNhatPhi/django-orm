@@ -1,3 +1,4 @@
+from typing import Iterable
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -28,7 +29,7 @@ class Restaurant(models.Model):
     latitude = models.FloatField(
         validators=[MaxValueValidator(-90), MaxValueValidator(90)]
     )
-    longitute = models.FloatField(
+    longitude = models.FloatField(
         validators=[MinValueValidator(-180), MaxValueValidator(180)]
     )
     restaurant_type = models.CharField(
@@ -37,6 +38,10 @@ class Restaurant(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs) -> None:
+        print(self._state.adding)
+        return super().save(*args, **kwargs)
 
 
 class Rating(models.Model):
