@@ -10,18 +10,26 @@ from core.models import Restaurant, Rating, Sale
 
 
 def run():
+    try:
+        user = User.objects.first()
+        restaurant = Restaurant.objects.first()
 
-    user = User.objects.first()
-    restaurant = Restaurant.objects.first()
+        rating = Rating(user=user, restaurant=restaurant, rating=10)
 
-    rating, created = Rating.objects.get_or_create(
-        restaurant=restaurant, user=user, rating=4
-    )
+        rating.full_clean()
+        rating.save()
 
-    if created:
-        print("The rating was created successfull.")
-    else:
-        print("The rating has existed")
+    except Exception as e:
+        print(e)
+
+    # rating, created = Rating.objects.get_or_create(
+    #     restaurant=restaurant, user=user, rating=4
+    # )
+
+    # if created:
+    #     print("The rating was created successfull.")
+    # else:
+    #     print("The rating has existed")
 
     # restaurant = Restaurant.objects.first()
 
