@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
+from django.db.models.functions import Lower
 
 
 def validate_restaurant_name_begin_with_a(value: str):
@@ -35,6 +36,11 @@ class Restaurant(models.Model):
     restaurant_type = models.CharField(
         max_length=2, choices=TypeChoices.choices, default=""
     )
+
+    class Meta:
+        ordering = [Lower("name")]
+        get_latest_by = "date_opened"
+        # get_earliest_by = "date_opened"
 
     def __str__(self):
         return self.name

@@ -34,6 +34,8 @@ class Command(BaseCommand):
         ]
 
         Restaurant.objects.all().delete()
+
+        # [Restaurant.objects.create(**r) for r in restaurants]
         for r in restaurants:
             Restaurant.objects.create(**r)
         
