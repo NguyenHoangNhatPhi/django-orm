@@ -6,8 +6,11 @@ from django.db.models.functions import Lower
 
 from core.models import Restaurant, Rating, Sale
 
-
+# Notes 
 # python3 manage.py runscript orm_script
+# prefetch_related
+# select_related
+
 
 
 def run():

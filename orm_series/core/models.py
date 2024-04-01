@@ -40,7 +40,6 @@ class Restaurant(models.Model):
     class Meta:
         ordering = [Lower("name")]
         get_latest_by = "date_opened"
-        # get_earliest_by = "date_opened"
 
     def __str__(self):
         return self.name
