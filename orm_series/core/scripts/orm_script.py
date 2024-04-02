@@ -3,21 +3,44 @@ from django.utils import timezone
 from django.db import connection
 from pprint import pprint
 from django.db.models.functions import Lower
+import random
 
-from core.models import Restaurant, Rating, Sale
+from core.models import Restaurant, Rating, Sale, Staff, StaffRestaurant
 
-# Notes 
+# Notes
 # python3 manage.py runscript orm_script
 # prefetch_related
 # select_related
 
 
-
 def run():
-    chinese = Restaurant.TypeChoices.CHINESE
-    sales = Sale.objects.filter(restaurant__restaurant_type=chinese).aaggregate(sum("income"))
+    # many-to-many: add, all, count, remove, set. clear, create, filter, exclude
 
-    print(sales)
+    staff, created = Staff.objects.get_or_create(name="John Wick")
+    staff.restaurants.clear()
+    restaturants = Restaurant.objects.all()[:10]
+    for restaurant in restaturants:
+        staff.restaurants.add(
+            restaurant, through_defaults={"salary": random.randint(20_000, 80_000)}
+        )
+    # staff.restaurants.set(
+    #     Restaurant.objects.all()[:10],
+    #     through_defaults={"salary": random.randint(20_000, 80_000)},
+    # )
+
+    # restaurant.staff_set.add(Staff.objects.get(pk=1))
+
+    # italian_restaurants = staff.restaurants.filter(
+    #     restaurant_type=Restaurant.TypeChoices.ITALIAN
+    # )
+    # [print(res.name) for res in italian_restaurants]
+    # print(italian_restaurants.count())
+    # print(staff.restaurants.all())
+
+    # chinese = Restaurant.TypeChoices.CHINESE
+    # sales = Sale.objects.filter(restaurant__restaurant_type=chinese).aaggregate(sum("income"))
+
+    # print(sales)
 
     # <----- Find all ratings associated with a restaurants beginning with 'C' ------->
     # ratings = Rating.objects.filter(restaurant__name__istartswith="c")

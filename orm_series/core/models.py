@@ -48,6 +48,17 @@ class Restaurant(models.Model):
         print(self._state.adding)
         return super().save(*args, **kwargs)
 
+class Staff(models.Model):
+    name = models.CharField(max_length=128)
+    restaurants = models.ManyToManyField(Restaurant, through="StaffRestaurant")
+
+    def __str__(self) -> str:
+        return self.name
+    
+class StaffRestaurant(models.Model):
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
+    salary = models.FloatField(null=True)
 
 class Rating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
