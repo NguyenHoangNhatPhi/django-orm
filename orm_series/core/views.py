@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpRequest
-from django.db.models import Sum, Prefetch
+from django.db.models import Sum, Prefetch, Avg, Max, Min, Count, CharField, Value
 from django.utils import timezone
+from django.db.models.functions import Upper, Length, Concat
 
 from core.forms import RatingForm, RestaurantForm
 from core.models import Restaurant, Sale, Rating, StaffRestaurant
@@ -9,10 +10,60 @@ from core.models import Restaurant, Sale, Rating, StaffRestaurant
 
 # Create your views here.
 def index(request: HttpRequest):
-    jobs = StaffRestaurant.objects.prefetch_related("restaurant", "staff")
 
-    for job in jobs:
-        print(f"{job.staff.name}-{job.restaurant.name}: {job.salary}")
+    restaurants = (
+        Restaurant.objects.annotate(total_sales=Sum("sales__income"))
+        # .order_by("total_sales")
+        .filter(total_sales__gte=10)
+    )
+
+    print(restaurants.aggregate(avg_sales=Avg("total_sales")))
+
+    # restaurants = Restaurant.objects.annotate(total_sales=Sum("sales__income")).values(
+    #     "name", "total_sales"
+    # )
+    # restaurants = Restaurant.objects.values("restaurant_type").annotate(
+    #     num_rating=Count("ratings"), avg_rating=Avg("ratings__rating")
+    # )
+
+    # Restaurant 1 [Rating: 4.3]
+    # concatenation = Concat(
+    #     "name",
+    #     Value(" [Rating: "),
+    #     Avg("ratings__rating"),
+    #     Value("]"),
+    #     output_field=CharField(),
+    # )
+    # restaurants = Restaurant.objects.annotate(message=concatenation)
+    # for r in restaurants:
+    #     print(r.message)
+
+    # fetch all restaurants, and let's assume we want
+    # to get the number of characters in the name of the restaurant. So 'xyz' == 3
+
+    # restaurants = Restaurant.objects.annotate(
+    #     len_name=Length("name"), upper_name=Upper("name")
+    # ).filter(len_name__gt=10)
+    # print(restaurants)
+
+    # one_month_ago = timezone.now() - timezone.timedelta(days=31)
+    # sales = Sale.objects.filter(
+    #     datetime__gte=one_month_ago
+    # )
+
+    # print(
+    #     sales.aggregate(
+    #         max=Max("income"),
+    #         min=Min("income"),
+    #         cont=Count("restaurant__id"),
+    #         average=Avg("income"),
+    #         sum=Sum("income"),
+    #     )
+    # )
+    # jobs = StaffRestaurant.objects.prefetch_related("restaurant", "staff")
+
+    # for job in jobs:
+    #     print(f"{job.staff.name}-{job.restaurant.name}: {job.salary}")
 
     # month_ago = timezone.now() - timezone.timedelta(days=30)
     # monthly_sales = Prefetch(

@@ -2,7 +2,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import connection
 from pprint import pprint
-from django.db.models.functions import Lower
+from django.db.models.functions import Lower, Upper
+from django.db.models import Count, Avg, Max, Min
 import random
 
 from core.models import Restaurant, Rating, Sale, Staff, StaffRestaurant
@@ -14,15 +15,37 @@ from core.models import Restaurant, Rating, Sale, Staff, StaffRestaurant
 
 
 def run():
-    # many-to-many: add, all, count, remove, set. clear, create, filter, exclude
+    max_income = Sale.objects.filter(
+        restaurant__restaurant_type__istartswith="c"
+    ).aggregate(
+        max=Max("income"), min=Min("income"), cont=Count("id"), average=Avg("income")
+    )
 
-    staff, created = Staff.objects.get_or_create(name="John Wick")
-    staff.restaurants.clear()
-    restaturants = Restaurant.objects.all()[:10]
-    for restaurant in restaturants:
-        staff.restaurants.add(
-            restaurant, through_defaults={"salary": random.randint(20_000, 80_000)}
-        )
+    print(max_income)
+
+    # average_italian_ratings = Rating.objects.filter(restaurant__id=2).aggregate(avg_rating=Avg("rating"))
+    # print(average_italian_ratings)
+    # restaurants = Restaurant.objects.filter(name__startswith="c" ).count()
+    # restaurants = Restaurant.objects.filter(name__startswith="c").aggregate(
+    #     total=Count("id")
+    # )
+
+    # restaurants = Restaurant.objects.values_list("name", flat=True)
+    # [print(restaurant) for restaurant in restaurants]
+
+    # IT = Restaurant.TypeChoices.ITALIAN
+    # italian_ratings = Rating.objects.filter(restaurant__restaurant_type=IT).values(
+    #     "rating", "restaurant__name", "user__username"
+    # ).order_by("-rating")[:1]
+    # print(italian_ratings)
+
+    # many-to-many: add, all, count, remove, set. clear, create, filter, exclude
+    # restaurants = Restaurant.objects.values(
+    #     upper_name=Upper("name"),
+    # )[:3]
+    # for restaurant in restaurants:
+    #     print(restaurant)
+
     # staff.restaurants.set(
     #     Restaurant.objects.all()[:10],
     #     through_defaults={"salary": random.randint(20_000, 80_000)},
