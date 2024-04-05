@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpRequest
-from django.db.models import Sum, Prefetch, Avg, Max, Min, Count, CharField, Value
+from django.db.models import Sum, Prefetch, Avg, Max, Min, Count, CharField, Value, F, Q
 from django.utils import timezone
 from django.db.models.functions import Upper, Length, Concat
+import random
 
 from core.forms import RatingForm, RestaurantForm
 from core.models import Restaurant, Sale, Rating, StaffRestaurant
@@ -11,13 +12,61 @@ from core.models import Restaurant, Sale, Rating, StaffRestaurant
 # Create your views here.
 def index(request: HttpRequest):
 
+    # sales = Sale.objects.aggregate(
+    #     profit=Count("id", filter=Q(income__gt=F("expenditure"))),
+    #     loss=Count("id", filter=Q(income__lte=F("expenditure"))),
+    # )
+
+    # print(sales)
+
     restaurants = (
-        Restaurant.objects.annotate(total_sales=Sum("sales__income"))
-        # .order_by("total_sales")
-        .filter(total_sales__gte=10)
+        Restaurant.objects.all()
+        .values("id", "name")
+        .annotate(
+            total_income=Sum("sales__income"),
+            total_expenditure=Sum("sales__expenditure"),
+            total_profit=F("total_income") - F("total_expenditure"),
+        )
+        .order_by("-total_profit")
     )
 
-    print(restaurants.aggregate(avg_sales=Avg("total_sales")))
+    count = restaurants.aggregate(
+        profit_count=Count("id", filter=Q(total_income__gt=F("total_expenditure"))),
+        loss_count=Count("id", filter=Q(total_income__lte=F("total_expenditure"))),
+    )
+
+    print(count)
+    print(Restaurant.objects.count( ))
+
+    # total_profit = restaurants.annotate(
+    #     total_profit=F("total_income") - F("total_expenditure")
+    # ).order_by("total_profit")
+
+    # sales = Sale.objects.select_related("restaurant").annotate(
+    #     profit=F("income") - F("expenditure")
+    # )
+    # sales = Sale.objects.filter(expenditure__gt=F("income"))
+
+    # for sale in sales:
+    #     print(f"{sale.restaurant} Profit: {sale.profit}")
+
+    # sales = Sale.objects.all()
+    # for sale in sales:
+    #     sale.expenditure = random.uniform(5, 100)
+    # Sale.objects.bulk_update(sales, ["expenditure"])
+
+    # rating = Rating.objects.first()
+    # rating.rating = F("rating") + 1
+    # rating.save(update_fields=["rating"])
+    # rating.refresh_from_db()
+
+    # restaurants = (
+    #     Restaurant.objects.annotate(total_sales=Sum("sales__income"))
+    #     # .order_by("total_sales")
+    #     .filter(total_sales__gte=10)
+    # )
+
+    # print(restaurants.aggregate(avg_sales=Avg("total_sales")))
 
     # restaurants = Restaurant.objects.annotate(total_sales=Sum("sales__income")).values(
     #     "name", "total_sales"
@@ -60,6 +109,7 @@ def index(request: HttpRequest):
     #         sum=Sum("income"),
     #     )
     # )
+    # jobs = StaffRestaurant.objects.all()
     # jobs = StaffRestaurant.objects.prefetch_related("restaurant", "staff")
 
     # for job in jobs:
