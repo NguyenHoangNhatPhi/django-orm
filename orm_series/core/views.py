@@ -12,6 +12,47 @@ from core.models import Restaurant, Sale, Rating, StaffRestaurant
 # Create your views here.
 def index(request: HttpRequest):
 
+    # We want to find all Sales where:
+    #   - Profit is greate than expenditure, OR
+    #   - Restaurant name contains a number
+
+    # name_has_num = Q(restaurant__name__regex=r"[0-9]+")
+    # profit_gt_expenditure = Q(income__gt=F("expenditure"))
+
+    # sales = Sale.objects.select_related("restaurant").filter(
+    #     profit_gt_expenditure, name_has_num
+    # )
+
+    # print(sales)
+
+    # <---- Description: restaurant's name contains either the word "Italian" OR the word "Mexican" ---->
+    # it_or_mx = Q(name__icontains="Italian") | Q(name__icontains="Mexican")
+    # recently_opened = Q(date_opened__gt=timezone.now() - timezone.timedelta(days=50))
+
+    # restaurants = Restaurant.objects.filter(it_or_mx, recently_opened)
+    # print(restaurants)
+
+    # Find any restaurants that have the number '1' in the name
+    # restaurants = Restaurant.objects.filter(
+    #     Q(name__istartswith="i") | Q(name__startswith="m")
+    # )
+
+    # Get all Italian or Mexican restaurants
+    # italian_restaurant = Restaurant.TypeChoices.ITALIAN
+    # mexican_restaurant = Restaurant.TypeChoices.MEXICAN
+    # restaurant_types = [italian_restaurant, mexican_restaurant]
+
+    # restaurants = (
+    #     Restaurant.objects.filter(
+    #         # restaurant_type__in=restaurant_types
+    #         Q(restaurant_type=italian_restaurant)
+    #         | Q(restaurant_type=mexican_restaurant),
+    #     )
+    #     # .values("name", "restaurant_type")
+    # )
+
+    # print(restaurants)
+
     # sales = Sale.objects.aggregate(
     #     profit=Count("id", filter=Q(income__gt=F("expenditure"))),
     #     loss=Count("id", filter=Q(income__lte=F("expenditure"))),
@@ -19,24 +60,24 @@ def index(request: HttpRequest):
 
     # print(sales)
 
-    restaurants = (
-        Restaurant.objects.all()
-        .values("id", "name")
-        .annotate(
-            total_income=Sum("sales__income"),
-            total_expenditure=Sum("sales__expenditure"),
-            total_profit=F("total_income") - F("total_expenditure"),
-        )
-        .order_by("-total_profit")
-    )
+    # restaurants = (
+    #     Restaurant.objects.all()
+    #     .values("id", "name")
+    #     .annotate(
+    #         total_income=Sum("sales__income"),
+    #         total_expenditure=Sum("sales__expenditure"),
+    #         total_profit=F("total_income") - F("total_expenditure"),
+    #     )
+    #     .order_by("-total_profit")
+    # )
 
-    count = restaurants.aggregate(
-        profit_count=Count("id", filter=Q(total_income__gt=F("total_expenditure"))),
-        loss_count=Count("id", filter=Q(total_income__lte=F("total_expenditure"))),
-    )
+    # count = restaurants.aggregate(
+    #     profit_count=Count("id", filter=Q(total_income__gt=F("total_expenditure"))),
+    #     loss_count=Count("id", filter=Q(total_income__lte=F("total_expenditure"))),
+    # )
 
-    print(count)
-    print(Restaurant.objects.count( ))
+    # print(count)
+    # print(Restaurant.objects.count( ))
 
     # total_profit = restaurants.annotate(
     #     total_profit=F("total_income") - F("total_expenditure")
