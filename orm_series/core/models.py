@@ -36,6 +36,8 @@ class Restaurant(models.Model):
     restaurant_type = models.CharField(
         max_length=2, choices=TypeChoices.choices, default=""
     )
+    capacity = models.PositiveSmallIntegerField(null=True, blank=True)
+    nickname = models.CharField(max_length=200, null=True, blank=True)
 
     class Meta:
         ordering = [Lower("name")]

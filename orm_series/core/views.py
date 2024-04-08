@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpRequest
 from django.db.models import Sum, Prefetch, Avg, Max, Min, Count, CharField, Value, F, Q
 from django.utils import timezone
-from django.db.models.functions import Upper, Length, Concat
+from django.db.models.functions import Upper, Length, Concat, Coalesce
 import random
 
 from core.forms import RatingForm, RestaurantForm
@@ -12,6 +12,19 @@ from core.models import Restaurant, Sale, Rating, StaffRestaurant
 # Create your views here.
 def index(request: HttpRequest):
 
+    restaurants = Restaurant.objects.annotate(
+        name_value=Coalesce(F("nickname"), F("name"))
+    )
+
+    print(restaurants)
+
+    # ratings = Rating.objects.filter(rating__lt=0).aggregate(
+    #     total_rating=Coalesce(Avg("rating"), 0.0)
+    # )
+
+    # for restaurant in restaurants:
+    #     for sale in restaurant.sales.all():
+    #         print(sale.income)
     # We want to find all Sales where:
     #   - Profit is greate than expenditure, OR
     #   - Restaurant name contains a number
