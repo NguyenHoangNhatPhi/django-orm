@@ -1,6 +1,21 @@
+import itertools
+from pprint import pprint
 from django.shortcuts import render
 from django.http import HttpRequest
-from django.db.models import Sum, Prefetch, Avg, Max, Min, Count, CharField, Value, F, Q
+from django.db.models import (
+    Sum,
+    Prefetch,
+    Avg,
+    Max,
+    Min,
+    Count,
+    CharField,
+    Value,
+    F,
+    Q,
+    Case,
+    When,
+)
 from django.utils import timezone
 from django.db.models.functions import Upper, Length, Concat, Coalesce
 import random
@@ -12,11 +27,94 @@ from core.models import Restaurant, Sale, Rating, StaffRestaurant
 # Create your views here.
 def index(request: HttpRequest):
 
-    restaurants = Restaurant.objects.annotate(
-        name_value=Coalesce(F("nickname"), F("name"))
+    # <---- Description: aggregating total Sales over each 10 days  period, starting from the first sale up until the last ---->
+    first_sale = Sale.objects.aggregate(first_sale_date=Min("datetime"))[
+        "first_sale_date"
+    ]
+    last_sale = Sale.objects.aggregate(last_sale_date=Max("datetime"))["last_sale_date"]
+
+    # generate a list of dates each 10 days apart
+    dates = []
+    count = itertools.count()
+
+    while (dt := first_sale + timezone.timedelta(days=10 * next(count))) <= last_sale:
+        dates.append(dt)
+
+    whens = [
+        When(
+            datetime__range=(dt, dt + timezone.timedelta(days=10)),
+            then=Value(dt.date()),
+        )
+        for dt in dates
+    ]
+
+    case = Case(*whens, output_field=CharField())
+
+    sales = (
+        Sale.objects.annotate(daterange=case)
+        .values("daterange")
+        .annotate(total_sales=Sum("income"))
     )
 
-    print(restaurants)
+    print(sales)
+
+    # restaurants = Restaurant.objects.annotate(
+    #     avg_ratings=Avg("ratings__rating"), num_ratings=Count("ratings__pk")
+    # )
+
+    # print(restaurants.order_by(F("avg_ratings").desc(nulls_last=True)))
+
+    # restaurants = restaurants.annotate(
+    #     highly_rating=Case(
+    #         When(avg_ratings__gt=3, num_ratings__gt=1, then=True), default=False
+    #     )
+    # )
+
+    # assign a continent to each restaurant
+    # type = Restaurant.TypeChoices
+    # european = Q(restaurant_type__in=[type.ITALIAN, type.GREEK])
+    # asian = Q(restaurant_type__in=[type.INDIAN, type.CHINESE])
+    # north_american = Q(restaurant_type=type.MEXICAN)
+
+    # restaurants = restaurants.annotate(
+    #     rating_bucket=Case(
+    #         When(avg_ratings__gt=3.5, then=Value("Highly Rated")),
+    #         When(avg_ratings__range=(2.5, 3.5), then=Value("Average Rating")),
+    #         When(avg_ratings__lt=2.5, then=Value("Bad Rating")),
+    #         default=Value("None Rating"),
+    #         output_field=CharField(),
+    #     ),
+    #     continent=Case(
+    #         When(european, then=Value("Europe")),
+    #         When(asian, then=Value("Asia")),
+    #         When(north_american, then=Value("North America")),
+    #         default=Value("Other"),
+    #     ),
+    # )
+
+    # print(
+    #     restaurants.values("name", "avg_ratings", "rating_bucket", "continent").filter(
+    #         continent="Asia"
+    #     )
+    # )
+
+    # restaurants = Restaurant.objects.annotate(number_sales=Count("sales"))
+
+    # restaurants = restaurants.annotate(
+    #     is_popular=Case(When(number_sales__gt=8, then=True), default=False)
+    # )
+
+    # italian_restaurant = Restaurant.TypeChoices.ITALIAN
+
+    # restaurants = Restaurant.objects.annotate(
+    #     is_italian=Case(
+    #         When(restaurant_type=italian_restaurant, then=True), default=False
+    #     )
+    # )
+
+    # restaurants = Restaurant.objects.annotate(
+    #     name_value=Coalesce(F("nickname"), F("name"))
+    # )
 
     # ratings = Rating.objects.filter(rating__lt=0).aggregate(
     #     total_rating=Coalesce(Avg("rating"), 0.0)
