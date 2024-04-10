@@ -15,6 +15,9 @@ from django.db.models import (
     Q,
     Case,
     When,
+    Subquery,
+    OuterRef,
+    Exists,
 )
 from django.utils import timezone
 from django.db.models.functions import Upper, Length, Concat, Coalesce
@@ -27,36 +30,85 @@ from core.models import Restaurant, Sale, Rating, StaffRestaurant
 # Create your views here.
 def index(request: HttpRequest):
 
+    five_days_ago = timezone.now() - timezone.timedelta(days=5)
+
+    sales = Sale.objects.filter(restaurant=OuterRef("pk"), datetime__gte=five_days_ago)
+
+    restaurants = Restaurant.objects.filter(Exists(sales))
+
+    print(restaurants)
+
+    # Filter to restaurants that have any sales with income > 85
+    # restaurants = Restaurant.objects.filter(
+    #     # Exists(Sale.objects.filter(restaurant=OuterRef("pk"), income__gt=85))
+    #     Exists(Rating.objects.filter(restaurant=OuterRef("pk"), rating=5))
+    # )
+    # print(restaurants)
+
+    # restaurants = Restaurant.objects.all()
+
+    # # Annotate each restaurant with the income generated from its MOST RECENT sale
+    # sales = Sale.objects.filter(restaurant=OuterRef("pk")).order_by("-datetime")
+
+    # # Outer query
+    # restaurants = restaurants.annotate(
+    #     last_sale_income=Subquery(sales.values("income")[:1]),
+    #     last_sale_expenditure=Subquery(sales.values("expenditure")[:1]),
+    #     profit=F("last_sale_income") - F("last_sale_expenditure"),
+    # )
+
+    # print(restaurants)
+
+    # restaurants = Restaurant.objects.filter(
+    #     restaurant_type__in=[
+    #         Restaurant.TypeChoices.ITALIAN,
+    #         Restaurant.TypeChoices.CHINESE,
+    #     ]
+    # )
+
+    # sales = Sale.objects.filter(restaurant__in=Subquery(restaurants.values("pk")))
+
+    # print(len(sales))
+
+    # sales = Sale.objects.filter(
+    #     restaurant__restaurant_type__in=[
+    #         Restaurant.TypeChoices.ITALIAN,
+    #         Restaurant.TypeChoices.CHINESE,
+    #     ]
+    # )
+
+    # print(sales.values_list("restaurant__restaurant_type", flat=True).distinct())
+
     # <---- Description: aggregating total Sales over each 10 days  period, starting from the first sale up until the last ---->
-    first_sale = Sale.objects.aggregate(first_sale_date=Min("datetime"))[
-        "first_sale_date"
-    ]
-    last_sale = Sale.objects.aggregate(last_sale_date=Max("datetime"))["last_sale_date"]
+    # first_sale = Sale.objects.aggregate(first_sale_date=Min("datetime"))[
+    #     "first_sale_date"
+    # ]
+    # last_sale = Sale.objects.aggregate(last_sale_date=Max("datetime"))["last_sale_date"]
 
-    # generate a list of dates each 10 days apart
-    dates = []
-    count = itertools.count()
+    # # generate a list of dates each 10 days apart
+    # dates = []
+    # count = itertools.count()
 
-    while (dt := first_sale + timezone.timedelta(days=10 * next(count))) <= last_sale:
-        dates.append(dt)
+    # while (dt := first_sale + timezone.timedelta(days=10 * next(count))) <= last_sale:
+    #     dates.append(dt)
 
-    whens = [
-        When(
-            datetime__range=(dt, dt + timezone.timedelta(days=10)),
-            then=Value(dt.date()),
-        )
-        for dt in dates
-    ]
+    # whens = [
+    #     When(
+    #         datetime__range=(dt, dt + timezone.timedelta(days=10)),
+    #         then=Value(dt.date()),
+    #     )
+    #     for dt in dates
+    # ]
 
-    case = Case(*whens, output_field=CharField())
+    # case = Case(*whens, output_field=CharField())
 
-    sales = (
-        Sale.objects.annotate(daterange=case)
-        .values("daterange")
-        .annotate(total_sales=Sum("income"))
-    )
+    # sales = (
+    #     Sale.objects.annotate(daterange=case)
+    #     .values("daterange")
+    #     .annotate(total_sales=Sum("income"))
+    # )
 
-    print(sales)
+    # print(sales)
 
     # restaurants = Restaurant.objects.annotate(
     #     avg_ratings=Avg("ratings__rating"), num_ratings=Count("ratings__pk")
