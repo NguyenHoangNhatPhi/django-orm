@@ -1,6 +1,7 @@
+from functools import partial
 import itertools
 from pprint import pprint
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpRequest
 from django.db.models import (
     Sum,
@@ -22,12 +23,35 @@ from django.db.models import (
 from django.utils import timezone
 from django.db.models.functions import Upper, Length, Concat, Coalesce
 import random
+from django.db import transaction
 
-from core.forms import RatingForm, RestaurantForm
-from core.models import Restaurant, Sale, Rating, StaffRestaurant
+from core.forms import RatingForm, RestaurantForm, ProductOrderForm
+from core.models import Restaurant, Sale, Rating, StaffRestaurant, Order
 
 
-# Create your views here.
+def email_user(email):
+    print(f"Dear {email}, Thank you for your order")
+
+
+def order_product(request: HttpRequest):
+    if request.method == "POST":
+        form = ProductOrderForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                order: Order = form.save()
+                order.product.number_in_stock -= order.number_of_items
+                order.product.save()
+                redirect("order-product")
+            transaction.on_commit(partial(email_user, "phinhn@gmail.com"))
+        else:
+            return render(request, "order.html", {"form": form})
+
+    form = ProductOrderForm()
+    context = {"form": form}
+
+    return render(request, "order.html", context)
+
+
 def index(request: HttpRequest):
 
     five_days_ago = timezone.now() - timezone.timedelta(days=5)
