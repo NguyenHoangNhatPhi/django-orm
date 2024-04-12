@@ -24,9 +24,10 @@ from django.utils import timezone
 from django.db.models.functions import Upper, Length, Concat, Coalesce
 import random
 from django.db import transaction
+import time
 
 from core.forms import RatingForm, RestaurantForm, ProductOrderForm
-from core.models import Restaurant, Sale, Rating, StaffRestaurant, Order
+from core.models import Restaurant, Sale, Rating, StaffRestaurant, Order, Product
 
 
 def email_user(email):
@@ -54,13 +55,17 @@ def order_product(request: HttpRequest):
 
 def index(request: HttpRequest):
 
-    five_days_ago = timezone.now() - timezone.timedelta(days=5)
+    with transaction.atomic():
+        book = Product.objects.select_for_update().get(name="Book")
+        time.sleep(60)
 
-    sales = Sale.objects.filter(restaurant=OuterRef("pk"), datetime__gte=five_days_ago)
+    # five_days_ago = timezone.now() - timezone.timedelta(days=5)
 
-    restaurants = Restaurant.objects.filter(Exists(sales))
+    # sales = Sale.objects.filter(restaurant=OuterRef("pk"), datetime__gte=five_days_ago)
 
-    print(restaurants)
+    # restaurants = Restaurant.objects.filter(Exists(sales))
+
+    # print(restaurants)
 
     # Filter to restaurants that have any sales with income > 85
     # restaurants = Restaurant.objects.filter(
